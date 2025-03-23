@@ -628,20 +628,20 @@
               "threats": [
                 {
                   "id": "73a1545b-197e-4bcb-99a8-846aa2ca12c1",
-                  "title": "Test",
+                  "title": "SQL-Injection",
                   "status": "Open",
-                  "severity": "TBD",
+                  "severity": "High",
                   "type": "Tampering",
-                  "description": "Provide a description for this threat",
-                  "mitigation": "Provide remediation for this threat or a reason if status is N/A",
+                  "description": "Användare kan manipulera SQL-frågor genom att skriva in skadlig SQL kod när användaren förväntas inmata data.",
+                  "mitigation": "Använd parametriserade SQL-frågor\nValidera informationen från användare innan det skickas till databasen",
                   "modelType": "STRIDE",
                   "new": false,
                   "number": 1,
-                  "score": ""
+                  "score": "8"
                 }
               ],
               "threatFrequency": {
-                "tampering": 1,
+                "tampering": 2,
                 "informationDisclosure": 0,
                 "denialOfService": 0
               }
@@ -663,7 +663,17 @@
                 "x": 550,
                 "y": 470
               }
-            ]
+            ],
+            "tools": {
+              "items": [
+                "boundary",
+                "button-remove",
+                "vertices",
+                "source-arrowhead",
+                "target-arrowhead"
+              ],
+              "name": null
+            }
           },
           {
             "shape": "flow",
