@@ -27,6 +27,9 @@
               "height": 60
             },
             "attrs": {
+              "text": {
+                "text": "User"
+              },
               "body": {
                 "stroke": "#333333",
                 "strokeWidth": 1.5,
@@ -121,7 +124,7 @@
             "id": "b5b0b53a-3bcc-474c-b8d6-c024a81a3836",
             "data": {
               "type": "tm.Actor",
-              "name": "Actor",
+              "name": "User",
               "description": "",
               "outOfScope": false,
               "reasonOutOfScope": "",
@@ -1082,6 +1085,6 @@
     ],
     "diagramTop": 1,
     "reviewer": "",
-    "threatTop": 3
+    "threatTop": 4
   }
 }
