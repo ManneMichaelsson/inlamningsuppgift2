@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administration</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f8d7da;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 800px;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            table-layout: fixed;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+            word-wrap: break-word;
+            overflow: hidden;
+        }
+        th {
+            background: #f1f1f1;
+        }
+        td:nth-child(1) { width: 30%; }
+        td:nth-child(2) { width: 15%; }
+        td:nth-child(3) { width: 20%; }
+        td:nth-child(4) { width: 20%; }
+        td:nth-child(5) { width: 15%; text-align: center; }
+        button {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .block-btn {
+            background: #dc3545;
+            color: white;
+        }
+        .unblock-btn {
+            background: #28a745;
+            color: white;
+        }
+        .delete-btn {
+            background: #007BFF;
+            color: white;
+        }
+        .download-btn {
+            background: #6c757d;
+            color: white;
+            width: 100%;
+            margin-top: 20px;
+        }
+        .logout-btn {
+            background: #dc3545;
+            color: white;
+            width: 100%;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Administration</h2>
+        
+        <h3>Users</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Email</th>
+                    <th>Blocked</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="users-table"></tbody>
+        </table>
+        
+        <h3>Messages</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Sender</th>
+                    <th>Recipient</th>
+                    <th>Message</th>
+                    <th>Date</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="messages-table"></tbody>
+        </table>
+        
+        <button class="download-btn" onclick="downloadLogFile()">Download log file</button>
+        <button class="logout-btn" onclick="logout()">Log out</button>
+    </div>
+    
+    <script>
+        function fetchUsers() {
+            fetch('http://localhost:8080/api/admin/users', { headers: { 'Authorization': `Bearer ${localStorage.getItem('jwt')}` }})
+            .then(res => res.json())
+            .then(users => {
+                const table = document.getElementById('users-table');
+                table.innerHTML = '';
+                users.forEach(user => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${user.email}</td>
+                        <td>${user.blocked ? 'Yes' : 'No'}</td>
+                        <td><button class="${user.blocked ? 'unblock-btn' : 'block-btn'}" onclick="toggleBlock('${user.email}', ${user.blocked})">${user.blocked ? 'Unblock' : 'Block'}</button></td>
+                    `;
+                    table.appendChild(row);
+                });
+            });
+        }
+
+        function fetchMessages() {
+            fetch('http://localhost:8080/api/admin/messages', { headers: { 'Authorization': `Bearer ${localStorage.getItem('jwt')}` }})
+            .then(res => res.json())
+            .then(messages => {
+                const table = document.getElementById('messages-table');
+                table.innerHTML = '';
+                messages.forEach(msg => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${msg.sender}</td>
+                        <td>${msg.recipient}</td>
+                        <td>${msg.message}</td>
+                        <td>${msg.date}</td>
+                        <td><button class="delete-btn" onclick="deleteMessage(${msg.id})">Delete</button></td>
+                    `;
+                    table.appendChild(row);
+                });
+            });
+        }
+
+        function toggleBlock(email, isBlocked) {
+            fetch('http://localhost:8080/api/admin/block', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email, block: !isBlocked })
+            }).then(() => fetchUsers());
+        }
+
+        function deleteMessage(id) {
+            fetch('http://localhost:8080/api/admin/delete', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ messageId: id })
+            }).then(() => fetchMessages());
+        }
+
+        function downloadLogFile() {
+            fetch('http://localhost:8080/api/admin/log', {
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('jwt')}` }
+            })
+            .then(response => response.blob())
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'logfile.txt';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            });
+        }
+
+        function logout() {
+            fetch('http://localhost:8080/api/logout', { method: 'GET', headers: { 'Authorization': `Bearer ${localStorage.getItem('jwt')}` }})
+            .then(() => {
+                localStorage.removeItem('jwt');
+                window.location.href = 'login.html';
+            });
+        }
+
+        fetchUsers();
+        fetchMessages();
+    </script>
+</body>
+</html>

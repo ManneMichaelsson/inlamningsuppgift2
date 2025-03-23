@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #d4edda;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 400px;
+        }
+        .tabs {
+            display: flex;
+            justify-content: space-around;
+            cursor: pointer;
+            border-bottom: 2px solid #ddd;
+            margin-bottom: 10px;
+        }
+        .tab {
+            padding: 10px;
+            flex: 1;
+            text-align: center;
+            background: #ddd;
+        }
+        .tab.active {
+            background: white;
+            font-weight: bold;
+            border-bottom: 2px solid blue;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #dc3545;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #c82333;
+        }
+        input {
+            width: calc(100% - 20px);
+            padding: 8px;
+            margin-top: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2 id="welcome-message">Welcome</h2>
+        <div class="tabs">
+            <div class="tab active" onclick="showTab('messages')">Messages</div>
+            <div class="tab" onclick="showTab('users')">Users</div>
+        </div>
+        
+        <div id="messages" class="tab-content active">
+            <h3>Messages</h3>
+            <ul id="messages-list"></ul>
+        </div>
+        
+        <div id="users" class="tab-content">
+            <h3>Users</h3>
+            <ul id="users-list"></ul>
+        </div>
+        
+        <hr>
+        
+        <button onclick="logout()">Log out</button>
+    </div>
+    
+    <script>
+        function parseJwt(token) {
+            try {
+                const base64Url = token.split('.')[1];
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join(''));
+                return JSON.parse(jsonPayload);
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function checkAuth() {
+            const token = localStorage.getItem('jwt');
+            if (!token) {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            const payload = parseJwt(token);
+            if (!payload || (payload.exp * 1000) < Date.now()) {
+                localStorage.removeItem('jwt');
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            document.getElementById('welcome-message').innerText = `Welcome ${payload.sub}`;
+            loadMessages();
+            loadUsers();
+        }
+        
+        function showTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById(tab).classList.add('active');
+            document.querySelector(`[onclick="showTab('${tab}')"]`).classList.add('active');
+        }
+
+        function loadMessages() {
+            fetch('http://localhost:8080/api/messages', { headers: { 'Authorization': `Bearer ${localStorage.getItem('jwt')}` }})
+            .then(res => res.json())
+            .then(data => {
+                const list = document.getElementById('messages-list');
+                list.innerHTML = '';
+                data.forEach(msg => {
+                    list.innerHTML += `<li><b>${msg.date}</b> - ${msg.sender}: ${msg.message}</li>`;
+                });
+            });
+        }
+        
+        function loadUsers() {
+            fetch('http://localhost:8080/api/users', { headers: { 'Authorization': `Bearer ${localStorage.getItem('jwt')}` }})
+            .then(res => res.json())
+            .then(data => {
+                const list = document.getElementById('users-list');
+                list.innerHTML = '';
+                data.forEach(email => {
+                    list.innerHTML += `<li>${email} <input type='text' id='msg-${email}' placeholder='Message'> <button onclick='sendMessage("${email}")'>Send</button></li>`;
+                });
+            });
+        }
+        
+        function sendMessage(email) {
+            const message = document.getElementById(`msg-${email}`).value;
+            fetch('http://localhost:8080/api/messages', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: `recipient=${encodeURIComponent(email)}&message=${encodeURIComponent(message)}`
+            })
+            .then(response => response.text())
+            .then(text => {
+                alert(text); // Show server response in an alert
+                loadMessages();
+            });
+        }
+
+        function logout() {
+            fetch('http://localhost:8080/api/logout', { method: 'GET', headers: { 'Authorization': `Bearer ${localStorage.getItem('jwt')}` }})
+            .then(() => {
+                localStorage.removeItem('jwt');
+                window.location.href = 'login.html';
+            });
+        }
+
+        checkAuth();
+    </script>
+</body>
+</html>

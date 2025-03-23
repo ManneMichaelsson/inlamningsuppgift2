@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background: #007BFF;
+            color: white;
+            cursor: pointer;
+        }
+        a {
+            display: block;
+            margin-top: 10px;
+            color: #007BFF;
+            text-decoration: none;
+        }
+        #message {
+            margin-top: 10px;
+            color: red;
+        }
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            justify-content: start;
+            gap: 10px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Register</h2>
+        <input type="email" id="email" placeholder="Email" style="width: 95%;" required>
+        <input type="password" id="password" placeholder="Password" style="width: 95%;" required>
+        <button onclick="register()">Register</button>
+        <a href="login.html">Already have an account? Login here</a>
+        <p id="message"></p>
+    </div>
+    <script>
+        function register() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const formBody = `email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`;
+            
+            fetch('http://localhost:8080/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: formBody
+            })
+            .then(response => response.text().then(text => ({ status: response.status, text })))
+            .then(({ status, text }) => {
+                const message = document.getElementById('message');
+                message.innerText = text;
+                message.style.color = status === 201 ? 'green' : 'red';
+                
+                if (status === 201) {
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 2000);
+                }
+            });
+        }
+    </script>
+</body>
+</html>

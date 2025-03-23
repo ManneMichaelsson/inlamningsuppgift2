@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background: #28a745;
+            color: white;
+            cursor: pointer;
+        }
+        a {
+            display: block;
+            margin-top: 10px;
+            color: #28a745;
+            text-decoration: none;
+        }
+        #message {
+            margin-top: 10px;
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Login</h2>
+        <input type="email" id="email" placeholder="Email" style="width: 95%" required>
+        <input type="password" id="password" placeholder="Password" style="width: 95%" required>
+        <button onclick="login()">Login</button>
+        <a href="register.html">Need to register? Sign up here</a>
+        <p id="message"></p>
+    </div>
+    <script>
+        function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            fetch('http://localhost:8080/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`
+            })
+            .then(response => response.text().then(text => ({ status: response.status, text })))
+            .then(({ status, text }) => {
+                const message = document.getElementById('message');
+                message.innerText = status === 200 ? "Login successful!" : text;
+                message.style.color = status === 200 ? 'green' : 'red';
+                
+                if (status === 200) {
+                    localStorage.setItem('jwt', text);
+                    const payload = JSON.parse(atob(text.split('.')[1]));
+                    const role = payload.role;
+                    
+                    setTimeout(() => {
+                        window.location.href = role === 'admin' ? 'admin.html' : 'user.html';
+                    }, 2000);
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+    </script>
+</body>
+</html>
